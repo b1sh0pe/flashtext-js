@@ -5,7 +5,8 @@
   "main": "index.js",
   "scripts": {
     "lint": "eslint '*/**/*.{js,ts}' --quiet --fix",
-    "format": "prettier --write '*/**/*.{js,ts,json}'"
+    "format": "prettier --write '*/**/*.{js,ts,json}'",
+    "build": "esbuild src/flashtext.ts --bundle --minify --sourcemap --outfile=dist/bundle.js"
   },
   "keywords": [],
   "author": "",
@@ -13,6 +14,7 @@
   "devDependencies": {
     "@typescript-eslint/eslint-plugin": "^6.21.0",
     "@typescript-eslint/parser": "^6.21.0",
+    "esbuild": "^0.20.0",
     "eslint": "^8.56.0",
     "eslint-config-prettier": "^9.1.0",
     "eslint-plugin-prettier": "^5.1.3",
