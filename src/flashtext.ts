@@ -1,6 +1,7 @@
 import type {
   KeywordTrieDictionary,
   KeywordTrieDictionaryCharacterList,
+  KeywordTrieDictionaryExtractResult,
   KeywordTrieDictionaryReturnType,
 } from './types';
 
@@ -65,20 +66,20 @@ export class FlashText {
       word = word.toLowerCase();
     }
 
-    let currentElemInDict = this._keywordTrieDict;
+    let currentDict = this._keywordTrieDict;
     let lenCovered = 0;
 
     for (const char of word) {
-      const nextElemInDict = currentElemInDict.get(char);
-      if (nextElemInDict instanceof Map) {
-        currentElemInDict = nextElemInDict;
+      const nextDict = currentDict.get(char);
+      if (nextDict instanceof Map) {
+        currentDict = nextDict;
         lenCovered++;
       } else {
         break;
       }
     }
 
-    return currentElemInDict.has(this._keyword) && lenCovered === word.length;
+    return currentDict.has(this._keyword) && lenCovered === word.length;
   }
 
   /**
@@ -91,20 +92,20 @@ export class FlashText {
       word = word.toLowerCase();
     }
 
-    let currentElemInDict = this._keywordTrieDict;
+    let currentDict = this._keywordTrieDict;
     let lenCovered = 0;
 
     for (const char of word) {
-      const nextElemInDict = currentElemInDict.get(char);
-      if (nextElemInDict instanceof Map) {
-        currentElemInDict = nextElemInDict;
+      const nextDict = currentDict.get(char);
+      if (nextDict instanceof Map) {
+        currentDict = nextDict;
         lenCovered++;
       } else {
         break;
       }
     }
 
-    const keyword = currentElemInDict.get(this._keyword);
+    const keyword = currentDict.get(this._keyword);
 
     if (!(keyword instanceof Map) && lenCovered === word.length) {
       return keyword;
@@ -135,21 +136,21 @@ export class FlashText {
       keyword = keyword.toLowerCase();
     }
 
-    let currentElemInDict = this._keywordTrieDict;
+    let currentDict = this._keywordTrieDict;
 
     for (const letter of keyword) {
-      const nextElemInDict = currentElemInDict.get(letter);
-      if (nextElemInDict instanceof Map) {
-        currentElemInDict = nextElemInDict;
+      const nextDict = currentDict.get(letter);
+      if (nextDict instanceof Map) {
+        currentDict = nextDict;
       } else {
         const newDict = new Map();
-        currentElemInDict.set(letter, newDict);
-        currentElemInDict = newDict;
+        currentDict.set(letter, newDict);
+        currentDict = newDict;
       }
     }
 
-    if (!currentElemInDict.has(this._keyword)) {
-      currentElemInDict.set(this._keyword, cleanName);
+    if (!currentDict.has(this._keyword)) {
+      currentDict.set(this._keyword, cleanName);
       status = true;
       this._termsInTrie++;
     }
@@ -174,26 +175,25 @@ export class FlashText {
       keyword = keyword.toLowerCase();
     }
 
-    let currentElemInDict: KeywordTrieDictionary | null = this._keywordTrieDict;
+    let currentDict: KeywordTrieDictionary | null = this._keywordTrieDict;
     const characterTrieList: KeywordTrieDictionaryCharacterList = [];
 
     for (const letter of keyword) {
-      const nextElemInDict: KeywordTrieDictionaryReturnType =
-        currentElemInDict.get(letter);
-      if (nextElemInDict instanceof Map) {
-        characterTrieList.push([letter, currentElemInDict]);
-        currentElemInDict = nextElemInDict;
+      const nextDict: KeywordTrieDictionaryReturnType = currentDict.get(letter);
+      if (nextDict instanceof Map) {
+        characterTrieList.push([letter, currentDict]);
+        currentDict = nextDict;
       } else {
         // If character is not found, break out of the loop
-        currentElemInDict = null;
+        currentDict = null;
         break;
       }
     }
 
     // Remove the characters from trie dict if there are no other keywords with them
-    if (currentElemInDict !== null && currentElemInDict.has(this._keyword)) {
+    if (currentDict !== null && currentDict.has(this._keyword)) {
       // We found a complete match for input keyword.
-      characterTrieList.push([this._keyword, currentElemInDict]);
+      characterTrieList.push([this._keyword, currentDict]);
       characterTrieList.reverse();
 
       for (const [keyToRemove, dictPointer] of characterTrieList) {
@@ -346,21 +346,20 @@ export class FlashText {
   /**
    * Recursive function to get all keywords from the keyword trie dictionary.
    * @param termSoFar - Term built so far by adding all previous characters.
-   * @param currentElemInDict - current recursive position in dictionary
+   * @param currentDict - current recursive position in dictionary
    * @param allKeywords - A dictionary of keywords present in the dictionary and the clean name mapped to those keywords.
    * @returns A map of key and value where each key is a term in the keyword trie dictionary and value mapped to it is the clean name mapped to it.
    */
-  private _getAllKeywords(
-    termSoFar: string,
-    currentElemInDict: KeywordTrieDictionary,
+  private _retrieveAllKeywords(
+    termSoFar: string = '',
+    currentDict: KeywordTrieDictionary = this._keywordTrieDict,
+    allKeywords: Record<string, string> = {},
   ): Record<string, string> {
-    const allKeywords: Record<string, string> = {};
-
-    for (const [char, nextElemInDict] of currentElemInDict) {
+    for (const [char, nextDict] of currentDict) {
       if (char === this._keyword) {
-        allKeywords[termSoFar] = nextElemInDict as string;
-      } else if (nextElemInDict instanceof Map) {
-        this._getAllKeywords(termSoFar + char, nextElemInDict);
+        allKeywords[termSoFar] = nextDict as string;
+      } else if (nextDict instanceof Map) {
+        this._retrieveAllKeywords(termSoFar + char, nextDict, allKeywords);
       }
     }
 
@@ -381,7 +380,7 @@ export class FlashText {
    * @returns A map of key and value where each key is a term in the keyword trie dictionary and value mapped to it is the clean name mapped to it.
    */
   public getAllKeywords(): Record<string, string> {
-    return this._getAllKeywords('', this._keywordTrieDict);
+    return this._retrieveAllKeywords();
   }
 
   /**
@@ -404,6 +403,14 @@ export class FlashText {
 
   /**
    * Retrieve the nodes where there is a fuzzy match, via levenshtein distance, and with respect to max_cost
+   * Example:
+   * ```
+   * const flashtext = new FlashText();
+   * flashtext.addKeyword('JS', 'Javascript');
+   * flashtext.addKeyword('TS', 'Typescript');
+   * const nodes = flashtext.levensthein('JS', 2);
+   *
+   * ```
    * @param word - word to find a fuzzy match for
    * @param maxCost - maximum levenshtein distance when performing the fuzzy match
    * @param startNode - Trie node from which the search is performed
@@ -458,10 +465,10 @@ export class FlashText {
     if (newRows[newRows.length - 1] <= maxCost && stopCrit) {
       yield [node, cost, depth];
     } else if (node instanceof Map && Math.min(...newRows) <= maxCost) {
-      for (const [newChar, newNode] of Object.entries(node)) {
+      for (const [newChar, newNode] of node) {
         yield* this._levenshteinRec(
           newChar,
-          newNode,
+          newNode as KeywordTrieDictionary,
           word,
           newRows,
           maxCost,
@@ -472,7 +479,7 @@ export class FlashText {
   }
 
   /**
-   * Extract keywords from a sentence.
+   * Searches in the string for all keywords present in corpus.
    * Example:
    * ```
    * const flashtext = new FlashText();
@@ -480,7 +487,7 @@ export class FlashText {
    * flashtext.addKeyword('TS', 'Typescript');
    * const keywords = flashtext.extractKeywords('TS is better than JS');
    *
-   * // Output - ['Javascript', 'Typescript']
+   * // Output - ['Typescript', 'Javascript']
    * ```
    * @param sentence - The sentence from which keywords need to be extracted.
    * @param spanInfo - If true, the output will contain the start and end position of the keyword in the sentence.
@@ -491,8 +498,8 @@ export class FlashText {
     sentence: string,
     spanInfo: boolean = false,
     maxCost: number = 0,
-  ): Array<string | [string, number, number]> {
-    const keywordsExtracted: Array<string | [string, number, number]> = [];
+  ): KeywordTrieDictionaryExtractResult {
+    const keywordsExtracted: KeywordTrieDictionaryExtractResult = [];
 
     if (!sentence) {
       return [];
@@ -514,18 +521,21 @@ export class FlashText {
     while (idx < sentenceLen) {
       const char = sentence.charAt(idx);
 
-      if (!(char in this._nonWordBoundaries)) {
-        if (this._keyword in currentDict || char in currentDict) {
+      // when character reached that might denote word end
+      if (!this._nonWordBoundaries.has(char)) {
+        if (currentDict.has(this._keyword) || currentDict.has(char)) {
+          // update longest sequence found
           let longestSequenceFound: string | undefined = undefined;
           let isLongerSeqFound = false;
 
-          if (this._keyword in currentDict) {
+          if (currentDict.has(this._keyword)) {
             const currentDictElem = currentDict.get(this._keyword) as string;
             longestSequenceFound = currentDictElem;
             sequenceEndPos = idx;
           }
 
-          if (char in currentDict) {
+          // re look for longest_sequence from this position
+          if (currentDict.has(char)) {
             let currentDictContinued: KeywordTrieDictionary | undefined =
               currentDict.get(char) as KeywordTrieDictionary;
             let idy = idx + 1;
@@ -533,10 +543,10 @@ export class FlashText {
             while (idy < sentenceLen) {
               const innerChar = sentence[idy];
               if (
-                innerChar.match(/\W/) &&
-                !(innerChar in this._nonWordBoundaries) &&
+                !this._nonWordBoundaries.has(innerChar) &&
                 currentDictContinued?.get(this._keyword)
               ) {
+                // update longest sequence found
                 longestSequenceFound = currentDictContinued.get(
                   this._keyword,
                 ) as string;
@@ -553,6 +563,7 @@ export class FlashText {
                   idy,
                   idy + this._getNextWord(sentence.slice(idy)).length,
                 );
+                // current_dict_continued to empty dict by default, so next iteration goes to a `break`
                 [currentDictContinued, currCost] = this._levensthein(
                   nextWord,
                   currCost,
@@ -569,7 +580,10 @@ export class FlashText {
               idy++;
             }
 
+            // end of sentence reached.
+
             if (currentDictContinued?.has(this._keyword)) {
+              // update longest sequence found
               longestSequenceFound = currentDictContinued.get(
                 this._keyword,
               ) as string;
@@ -596,11 +610,13 @@ export class FlashText {
 
           resetCurrentDict = true;
         } else {
+          // reset current_dict
           currentDict = this._keywordTrieDict;
 
           resetCurrentDict = true;
         }
-      } else if (char in currentDict) {
+      } else if (currentDict.has(char)) {
+        // can continue from this char
         currentDict = currentDict.get(char) as KeywordTrieDictionary;
       } else if (currCost > 0) {
         const nextWord = sentence.slice(
@@ -614,14 +630,16 @@ export class FlashText {
         ).next();
         idx += nextWord.length - 1;
       } else {
+        // reset current_dict
         currentDict = this._keywordTrieDict;
 
         resetCurrentDict = true;
 
+        // skip to end of word
         let idy = idx + 1;
         while (idy < sentenceLen) {
           const char = sentence.charAt(idy);
-          if (char.match(/\W/) && !(char in this._nonWordBoundaries)) {
+          if (!this._nonWordBoundaries.has(char)) {
             break;
           }
 
@@ -631,7 +649,8 @@ export class FlashText {
         idx = idy;
       }
 
-      if (idx + 1 >= sentenceLen && this._keyword in currentDict) {
+      // if we are end of sentence and have a sequence discovered
+      if (idx + 1 >= sentenceLen && currentDict.has(this._keyword)) {
         const sequenceFound = currentDict.get(this._keyword) as string;
         keywordsExtracted.push([sequenceFound, sequenceStartPos, sentenceLen]);
       }
