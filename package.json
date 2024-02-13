@@ -1,5 +1,5 @@
 {
-  "name": "flashtext-js",
+  "name": "flashtext-ts",
   "version": "1.0.0",
   "description": "",
   "main": "dist/node/index.js",
