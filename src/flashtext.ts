@@ -37,7 +37,7 @@ export class FlashText {
    */
   constructor(caseSensitive: boolean = false) {
     this._keyword = '_keyword_';
-    this._whiteSpaceChars = new Set(['.', '\t', '\n', 'a', ' ', ',']);
+    this._whiteSpaceChars = new Set(['.', '\t', '\n', ' ', ',']);
 
     // Defining non-word boundaries based on Python's string module in TypeScript
     const digits = '0123456789';
@@ -563,12 +563,16 @@ export class FlashText {
                   idy,
                   idy + this._getNextWord(sentence.slice(idy)).length,
                 );
+
                 // current_dict_continued to empty dict by default, so next iteration goes to a `break`
-                [currentDictContinued, currCost] = this._levensthein(
+                const [nextNode, cost] = this._levensthein(
                   nextWord,
                   currCost,
                   currentDictContinued,
-                ).next();
+                ).next().value;
+
+                currentDictContinued = nextNode as KeywordTrieDictionary;
+                currCost -= cost;
                 idy += nextWord.length - 1;
                 if (!currentDictContinued) {
                   break;
@@ -623,11 +627,15 @@ export class FlashText {
           idx,
           idx + this._getNextWord(sentence.slice(idx)).length,
         );
-        [currentDict, currCost] = this._levensthein(
+
+        const [nextDict, cost] = this._levensthein(
           nextWord,
           currCost,
           currentDict,
-        ).next();
+        ).next().value;
+
+        currentDict = nextDict;
+        currCost -= cost;
         idx += nextWord.length - 1;
       } else {
         // reset current_dict
@@ -668,5 +676,198 @@ export class FlashText {
     }
 
     return keywordsExtracted.map((value) => value[0]);
+  }
+
+  /**
+   * Searches in the string for all keywords present in corpus. Keywords present are replaced by the clean name and a new string is returned.
+   * Example:
+   * ```
+   * const flashtext = new FlashText();
+   * flashtext.addKeyword('JS', 'Javascript');
+   * flashtext.addKeyword('TS', 'Typescript');
+   * const newSentence = flashtext.replaceKeywords('TS is better than JS');
+   * // Output - 'Typescript is better than Javascript'
+   * ```
+   * @param sentence - Text where we will replace keywords
+   * @param maxCost - The maximum levenshtein distance when performing the fuzzy match.
+   * @returns Text with replaced keywords.
+   */
+  public replaceKeywords(sentence: string, maxCost: number = 0): string {
+    if (!sentence) {
+      // If sentence is empty or null, return the same sentence
+      return sentence;
+    }
+
+    const newSentencePieces: string[] = [];
+    let origSentence = sentence;
+
+    if (!this._caseSensitive) {
+      sentence = sentence.toLowerCase();
+    }
+
+    let currentWord = '';
+    let currentDict = this._keywordTrieDict;
+    let currentWhiteSpace = '';
+    let sequenceEndPos = 0;
+    let idx = 0;
+
+    const sentenceLen = sentence.length;
+    let currCost = maxCost;
+
+    while (idx < sentenceLen) {
+      const char = sentence.charAt(idx);
+
+      // When we reach whitespace
+      if (!this._nonWordBoundaries.has(char)) {
+        currentWord += origSentence.charAt(idx);
+        currentWhiteSpace = char;
+
+        // If end is present in currentDict
+        if (currentDict.has(this._keyword) || currentDict.has(char)) {
+          // Update longest sequence found
+          let longestSequenceFound = null;
+          let isLongerSeqFound = false;
+
+          if (currentDict.has(this._keyword)) {
+            const currentDictElem = currentDict.get(this._keyword) as string;
+            longestSequenceFound = currentDictElem;
+            sequenceEndPos = idx;
+          }
+
+          // Re-look for longest_sequence from this position
+          if (currentDict.has(char)) {
+            let currentDictContinued = currentDict.get(
+              char,
+            ) as KeywordTrieDictionary;
+            let currentWordContinued = currentWord;
+            let idy = idx + 1;
+
+            while (idy < sentenceLen) {
+              const innerChar = sentence.charAt(idy);
+
+              if (
+                !this._nonWordBoundaries.has(innerChar) &&
+                currentDictContinued.has(this._keyword)
+              ) {
+                currentWordContinued += origSentence.charAt(idy);
+                // Update longest sequence found
+                currentWhiteSpace = innerChar;
+                longestSequenceFound = currentDictContinued.get(
+                  this._keyword,
+                ) as string;
+                sequenceEndPos = idy;
+                isLongerSeqFound = true;
+              }
+
+              if (currentDictContinued.has(innerChar)) {
+                currentWordContinued += origSentence.charAt(idy);
+                currentDictContinued = currentDictContinued.get(
+                  innerChar,
+                ) as KeywordTrieDictionary;
+              } else if (currCost > 0) {
+                const nextWord = this._getNextWord(origSentence.slice(idy));
+
+                const [nextNode, cost] = this._levensthein(
+                  nextWord,
+                  currCost,
+                  currentDictContinued,
+                ).next().value;
+
+                currentDictContinued = nextNode;
+                idy += nextWord.length - 1;
+                currCost -= cost;
+                currentWordContinued += nextWord; // Just in case of a no match at the end
+                if (!currentDictContinued) {
+                  break;
+                }
+              } else {
+                break;
+              }
+              idy++;
+            }
+
+            if (isLongerSeqFound) {
+              idx = sequenceEndPos;
+              currentWord = currentWordContinued;
+            }
+          }
+
+          currentDict = this._keywordTrieDict;
+
+          if (longestSequenceFound) {
+            currCost = maxCost;
+            newSentencePieces.push(longestSequenceFound + currentWhiteSpace);
+            currentWord = '';
+            currentWhiteSpace = '';
+          } else {
+            newSentencePieces.push(currentWord);
+            currentWord = '';
+            currentWhiteSpace = '';
+          }
+        } else {
+          // reset currentDict
+          currentDict = this._keywordTrieDict;
+          newSentencePieces.push(currentWord);
+          currentWord = '';
+          currentWhiteSpace = '';
+        }
+      } else if (currentDict.has(char)) {
+        // can continue from this char
+        currentWord += origSentence.charAt(idx);
+        currentDict = currentDict.get(char) as KeywordTrieDictionary;
+      } else if (currCost > 0) {
+        const nextOrigWord = this._getNextWord(origSentence.slice(idx));
+        const nextWord = this._caseSensitive
+          ? nextOrigWord
+          : nextOrigWord.toLowerCase();
+
+        const [nextNode, cost] = this._levensthein(
+          nextWord,
+          currCost,
+          currentDict,
+        ).next().value;
+
+        currentDict = nextNode;
+        idx += nextWord.length - 1;
+        currCost -= cost;
+        currentWord += nextOrigWord; // Just in case of a no match at the end
+      } else {
+        currentWord += origSentence.charAt(idx);
+        // reset currentDict
+        currentDict = this._keywordTrieDict;
+
+        // Skip to end of word
+        let idy = idx + 1;
+
+        while (idy < sentenceLen) {
+          const nextChar = sentence.charAt(idy);
+          currentWord += origSentence.charAt(idy);
+
+          if (!this._nonWordBoundaries.has(nextChar)) {
+            break;
+          }
+
+          idy++;
+        }
+
+        idx = idy;
+        newSentencePieces.push(currentWord);
+        currentWord = '';
+        currentWhiteSpace = '';
+      }
+
+      // If we are at end of sentence and have a sequence discovered
+      if (idx + 1 >= sentenceLen) {
+        if (currentDict.has(this._keyword)) {
+          const sequenceFound = currentDict.get(this._keyword) as string;
+          newSentencePieces.push(sequenceFound);
+        } else {
+          newSentencePieces.push(currentWord);
+        }
+      }
+      idx++;
+    }
+
+    return newSentencePieces.join('');
   }
 }
