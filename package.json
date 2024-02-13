@@ -7,7 +7,7 @@
   "typings": "dist/types/index.d.ts",
   "scripts": {
     "test": "jest",
-    "lint": "eslint '*/**/*.{js,ts}' --quiet --fix",
+    "lint": "eslint ./src/**/*.{js,ts} --quiet --fix",
     "format": "prettier --write '*/**/*.{js,ts,json}'",
     "build:node": "esbuild src/index.ts --bundle --platform=node --outdir=dist/node",
     "build:browser": "esbuild src/index.ts --bundle --minify --format=esm --outdir=dist/browser",

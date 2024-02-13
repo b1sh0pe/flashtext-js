@@ -699,7 +699,7 @@ export class FlashText {
     }
 
     const newSentencePieces: string[] = [];
-    let origSentence = sentence;
+    const origSentence = sentence;
 
     if (!this._caseSensitive) {
       sentence = sentence.toLowerCase();
