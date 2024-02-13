@@ -1,21 +1,23 @@
-name: Lint
+name: Unit tests
 on: pull_request
 jobs:
   check:
-    name: ESLint
+    name: Jest
     runs-on: ubuntu-latest
     concurrency:
-      group: checks-${{ github.workflow }}-${{ github.ref }}
+      group: ${{ github.workflow }}-${{ github.ref }}
       cancel-in-progress: true
     steps:
       - uses: actions/checkout@v3
       - uses: actions/setup-node@v3
         with:
-          node-version: 'lts/*'
+          node-version: lts/*
       - name: Install pnpm
         uses: pnpm/action-setup@v2
         with:
           version: 8
           run_install: false
-      - run: pnpm install
-      - run: pnpm lint
+      - name: Install dependencies
+        run: pnpm install
+      - name: Run tests
+        run: pnpm test
