@@ -6,7 +6,10 @@
   "scripts": {
     "lint": "eslint '*/**/*.{js,ts}' --quiet --fix",
     "format": "prettier --write '*/**/*.{js,ts,json}'",
-    "build": "esbuild src/flashtext.ts --bundle --minify --sourcemap --outfile=dist/bundle.js"
+    "build:node": "esbuild src/index.ts --bundle --platform=node --outdir=dist/node",
+    "build:browser": "esbuild src/index.ts --bundle --minify --format=esm --outdir=dist/browser",
+    "build:types": "tsc --emitDeclarationOnly && tsc-alias",
+    "build": "pnpm build:types && pnpm build:node && pnpm build:browser"
   },
   "keywords": [],
   "author": "",
@@ -19,6 +22,9 @@
     "eslint-config-prettier": "^9.1.0",
     "eslint-plugin-prettier": "^5.1.3",
     "prettier": "^3.2.5",
-    "typescript": "^5.3.3"
+    "ts-node": "^10.9.2",
+    "tsc-alias": "^1.8.8",
+    "typescript": "^5.3.3",
+    "lint-staged": "^15.2.2"
   }
 }

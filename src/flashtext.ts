@@ -353,7 +353,7 @@ export class FlashText {
   private _retrieveAllKeywords(
     termSoFar: string = '',
     currentDict: KeywordTrieDictionary = this._keywordTrieDict,
-    allKeywords: Record<string, string> = {},
+    allKeywords: Record<string, string> = {}
   ): Record<string, string> {
     for (const [char, nextDict] of currentDict) {
       if (char === this._keyword) {
@@ -419,7 +419,7 @@ export class FlashText {
   private *_levensthein(
     word: string,
     maxCost: number = 2,
-    startNode: KeywordTrieDictionary | null = null,
+    startNode: KeywordTrieDictionary | null = null
   ): Generator<[KeywordTrieDictionary, number, number]> {
     startNode = startNode || this._keywordTrieDict;
     const rows = [...Array(word.length + 1).keys()];
@@ -431,7 +431,7 @@ export class FlashText {
         word,
         rows,
         maxCost,
-        1,
+        1
       );
     }
   }
@@ -442,7 +442,7 @@ export class FlashText {
     word: string,
     rows: number[],
     maxCost: number,
-    depth: number = 0,
+    depth: number = 0
   ): Generator<[KeywordTrieDictionary, number, number]> {
     const nColumns = word.length + 1;
     const newRows: number[] = [rows[0] + 1];
@@ -459,7 +459,7 @@ export class FlashText {
     const stopCrit =
       node instanceof Map &&
       [...node.keys()].some(
-        (key) => this._whiteSpaceChars.has(key) || key === this._keyword,
+        (key) => this._whiteSpaceChars.has(key) || key === this._keyword
       );
 
     if (newRows[newRows.length - 1] <= maxCost && stopCrit) {
@@ -472,7 +472,7 @@ export class FlashText {
           word,
           newRows,
           maxCost,
-          depth + 1,
+          depth + 1
         );
       }
     }
@@ -497,7 +497,7 @@ export class FlashText {
   public extractKeywords(
     sentence: string,
     spanInfo: boolean = false,
-    maxCost: number = 0,
+    maxCost: number = 0
   ): KeywordTrieDictionaryExtractResult {
     const keywordsExtracted: KeywordTrieDictionaryExtractResult = [];
 
@@ -548,7 +548,7 @@ export class FlashText {
               ) {
                 // update longest sequence found
                 longestSequenceFound = currentDictContinued.get(
-                  this._keyword,
+                  this._keyword
                 ) as string;
                 sequenceEndPos = idy;
                 isLongerSeqFound = true;
@@ -556,19 +556,19 @@ export class FlashText {
 
               if (currentDictContinued?.has(innerChar)) {
                 currentDictContinued = currentDictContinued.get(
-                  innerChar,
+                  innerChar
                 ) as KeywordTrieDictionary;
               } else if (currCost > 0) {
                 const nextWord = sentence.slice(
                   idy,
-                  idy + this._getNextWord(sentence.slice(idy)).length,
+                  idy + this._getNextWord(sentence.slice(idy)).length
                 );
 
                 // current_dict_continued to empty dict by default, so next iteration goes to a `break`
                 const [nextNode, cost] = this._levensthein(
                   nextWord,
                   currCost,
-                  currentDictContinued,
+                  currentDictContinued
                 ).next().value;
 
                 currentDictContinued = nextNode as KeywordTrieDictionary;
@@ -589,7 +589,7 @@ export class FlashText {
             if (currentDictContinued?.has(this._keyword)) {
               // update longest sequence found
               longestSequenceFound = currentDictContinued.get(
-                this._keyword,
+                this._keyword
               ) as string;
               sequenceEndPos = idy;
               isLongerSeqFound = true;
@@ -625,13 +625,13 @@ export class FlashText {
       } else if (currCost > 0) {
         const nextWord = sentence.slice(
           idx,
-          idx + this._getNextWord(sentence.slice(idx)).length,
+          idx + this._getNextWord(sentence.slice(idx)).length
         );
 
         const [nextDict, cost] = this._levensthein(
           nextWord,
           currCost,
-          currentDict,
+          currentDict
         ).next().value;
 
         currentDict = nextDict;
@@ -737,7 +737,7 @@ export class FlashText {
           // Re-look for longest_sequence from this position
           if (currentDict.has(char)) {
             let currentDictContinued = currentDict.get(
-              char,
+              char
             ) as KeywordTrieDictionary;
             let currentWordContinued = currentWord;
             let idy = idx + 1;
@@ -753,7 +753,7 @@ export class FlashText {
                 // Update longest sequence found
                 currentWhiteSpace = innerChar;
                 longestSequenceFound = currentDictContinued.get(
-                  this._keyword,
+                  this._keyword
                 ) as string;
                 sequenceEndPos = idy;
                 isLongerSeqFound = true;
@@ -762,7 +762,7 @@ export class FlashText {
               if (currentDictContinued.has(innerChar)) {
                 currentWordContinued += origSentence.charAt(idy);
                 currentDictContinued = currentDictContinued.get(
-                  innerChar,
+                  innerChar
                 ) as KeywordTrieDictionary;
               } else if (currCost > 0) {
                 const nextWord = this._getNextWord(origSentence.slice(idy));
@@ -770,7 +770,7 @@ export class FlashText {
                 const [nextNode, cost] = this._levensthein(
                   nextWord,
                   currCost,
-                  currentDictContinued,
+                  currentDictContinued
                 ).next().value;
 
                 currentDictContinued = nextNode;
@@ -824,7 +824,7 @@ export class FlashText {
         const [nextNode, cost] = this._levensthein(
           nextWord,
           currCost,
-          currentDict,
+          currentDict
         ).next().value;
 
         currentDict = nextNode;
