@@ -2,7 +2,9 @@
   "name": "flashtext-js",
   "version": "1.0.0",
   "description": "",
-  "main": "index.js",
+  "main": "dist/node/index.js",
+  "browser": "dist/browser/index.js",
+  "typings": "dist/types/index.d.ts",
   "scripts": {
     "lint": "eslint '*/**/*.{js,ts}' --quiet --fix",
     "format": "prettier --write '*/**/*.{js,ts,json}'",
@@ -11,20 +13,29 @@
     "build:types": "tsc --emitDeclarationOnly && tsc-alias",
     "build": "pnpm build:types && pnpm build:node && pnpm build:browser"
   },
+  "files": [
+    "dist"
+  ],
   "keywords": [],
-  "author": "",
-  "license": "ISC",
+  "author": "Andrii Arkhipov",
+  "license": "MIT",
+  "publishConfig": {
+    "@b1sh0pe:registry": "https://registry.npmjs.org"
+  },
   "devDependencies": {
+    "@semantic-release/git": "^10.0.1",
+    "@semantic-release/github": "^9.2.6",
     "@typescript-eslint/eslint-plugin": "^6.21.0",
     "@typescript-eslint/parser": "^6.21.0",
     "esbuild": "^0.20.0",
     "eslint": "^8.56.0",
     "eslint-config-prettier": "^9.1.0",
     "eslint-plugin-prettier": "^5.1.3",
+    "lint-staged": "^15.2.2",
     "prettier": "^3.2.5",
+    "semantic-release": "^23.0.2",
     "ts-node": "^10.9.2",
     "tsc-alias": "^1.8.8",
-    "typescript": "^5.3.3",
-    "lint-staged": "^15.2.2"
+    "typescript": "^5.3.3"
   }
 }

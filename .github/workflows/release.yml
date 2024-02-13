@@ -1,0 +1,35 @@
+name: Release
+on:
+  release:
+    types: [created]
+jobs:
+  release:
+    permissions:
+      contents: write
+      issues: write
+      pull-requests: write
+      packages: write
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+        with:
+          node-version: 'lts/*'
+          registry-url: 'https://registry.npmjs.org/'
+      - name: Install pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 8
+          run_install: false
+      - name: 📦 Install
+        run: pnpm install
+      - name: 🏗️ Build
+        run: pnpm build
+      - name: 📝 Version
+        env:
+          TAG_NAME: ${{ github.event.release.tag_name }}
+        run: pnpm version ${TAG_NAME} --no-git-tag-version
+      - name: 🐙 Publish on NPM
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: pnpm publish --no-git-checks
