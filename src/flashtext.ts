@@ -544,7 +544,7 @@ export class FlashText {
               const innerChar = sentence[idy];
               if (
                 !this._nonWordBoundaries.has(innerChar) &&
-                currentDictContinued?.get(this._keyword)
+                currentDictContinued?.has(this._keyword)
               ) {
                 // update longest sequence found
                 longestSequenceFound = currentDictContinued.get(
@@ -586,7 +586,10 @@ export class FlashText {
 
             // end of sentence reached.
 
-            if (currentDictContinued?.has(this._keyword)) {
+            if (
+              idy >= sentenceLen &&
+              currentDictContinued?.has(this._keyword)
+            ) {
               // update longest sequence found
               longestSequenceFound = currentDictContinued.get(
                 this._keyword
@@ -784,6 +787,19 @@ export class FlashText {
                 break;
               }
               idy++;
+            }
+
+            if (
+              idy >= sentenceLen &&
+              currentDictContinued?.has(this._keyword)
+            ) {
+              // update longest sequence found
+              currentWhiteSpace = '';
+              longestSequenceFound = currentDictContinued.get(
+                this._keyword
+              ) as string;
+              sequenceEndPos = idy;
+              isLongerSeqFound = true;
             }
 
             if (isLongerSeqFound) {
