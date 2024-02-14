@@ -10,6 +10,11 @@ type ExtractorTestCase = {
 };
 
 describe('Flashword Extractor Test Cases', () => {
+  /**
+   * For each of the test case initialize a new FlashText.
+   * Add the keywords the test case to FlashText.
+   * Extract keywords and check if they match the expected result for the test case.
+   */
   describe('Case Insensitive', () => {
     it.each([
       ...(ExtractorTestCases as unknown as ExtractorTestCase[]).map(
@@ -24,6 +29,11 @@ describe('Flashword Extractor Test Cases', () => {
     });
   });
 
+  /**
+   * For each of the test case initialize a new FlashText.
+   * Add the keywords the test case to FlashText.
+   * Extract keywords and check if they match the expected result for the test case.
+   */
   describe('Case Sensitive', () => {
     it.each([
       ...(ExtractorTestCases as unknown as ExtractorTestCase[]).map(
