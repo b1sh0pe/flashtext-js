@@ -57,7 +57,7 @@ describe('Flashtext Remover Test Cases', () => {
    * Extract keywords and check if they match the expected result for the test case.
    */
   it.each([...(RemoverTestCases as unknown as RemoverTestCase[])])(
-    'should have identical dictionaries in 2 separate FlashText instances',
+    'should produce identical results for the rebuilt dictionary and the original dictionary after removing keywords',
     (testCase) => {
       const flashTextOne = new FlashText();
 

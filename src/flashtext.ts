@@ -57,6 +57,13 @@ export class FlashText {
   }
 
   /**
+   * @returns A keyword trie dictionary.
+   */
+  public getTrie(): KeywordTrieDictionary {
+    return this._keywordTrieDict;
+  }
+
+  /**
    *
    * @param word - The word that needs to be checked.
    * @returns A boolean indicating whether the word is present in the keyword trie dictionary.
@@ -416,10 +423,11 @@ export class FlashText {
    * @param startNode - Trie node from which the search is performed
    * @returns A tuple containing the final node, the cost (i.e the distance), and the depth in the trie.
    */
-  private *_levensthein(
+  public *levensthein(
     word: string,
     maxCost: number = 2,
-    startNode: KeywordTrieDictionary | null = null
+    startNode: KeywordTrieDictionary | null = null,
+    defaultValue: [KeywordTrieDictionary, number, number]
   ): Generator<[KeywordTrieDictionary, number, number]> {
     startNode = startNode || this._keywordTrieDict;
     const rows = [...Array(word.length + 1).keys()];
@@ -431,7 +439,8 @@ export class FlashText {
         word,
         rows,
         maxCost,
-        1
+        1,
+        defaultValue
       );
     }
   }
@@ -442,7 +451,8 @@ export class FlashText {
     word: string,
     rows: number[],
     maxCost: number,
-    depth: number = 0
+    depth: number = 0,
+    defaultValue: [KeywordTrieDictionary, number, number]
   ): Generator<[KeywordTrieDictionary, number, number]> {
     const nColumns = word.length + 1;
     const newRows: number[] = [rows[0] + 1];
@@ -472,10 +482,13 @@ export class FlashText {
           word,
           newRows,
           maxCost,
-          depth + 1
+          depth + 1,
+          defaultValue
         );
       }
     }
+
+    yield defaultValue;
   }
 
   /**
@@ -565,16 +578,17 @@ export class FlashText {
                 );
 
                 // current_dict_continued to empty dict by default, so next iteration goes to a `break`
-                const [nextNode, cost] = this._levensthein(
+                const [nextNode, cost] = this.levensthein(
                   nextWord,
                   currCost,
-                  currentDictContinued
+                  currentDictContinued,
+                  [new Map(), 0, 0]
                 ).next().value;
 
                 currentDictContinued = nextNode as KeywordTrieDictionary;
                 currCost -= cost;
                 idy += nextWord.length - 1;
-                if (!currentDictContinued) {
+                if (!currentDictContinued.size) {
                   break;
                 }
               } else {
@@ -631,10 +645,11 @@ export class FlashText {
           idx + this._getNextWord(sentence.slice(idx)).length
         );
 
-        const [nextDict, cost] = this._levensthein(
+        const [nextDict, cost] = this.levensthein(
           nextWord,
           currCost,
-          currentDict
+          currentDict,
+          [this._keywordTrieDict, 0, 0]
         ).next().value;
 
         currentDict = nextDict;
@@ -770,17 +785,18 @@ export class FlashText {
               } else if (currCost > 0) {
                 const nextWord = this._getNextWord(origSentence.slice(idy));
 
-                const [nextNode, cost] = this._levensthein(
+                const [nextNode, cost] = this.levensthein(
                   nextWord,
                   currCost,
-                  currentDictContinued
+                  currentDictContinued,
+                  [new Map(), 0, 0]
                 ).next().value;
 
                 currentDictContinued = nextNode;
                 idy += nextWord.length - 1;
                 currCost -= cost;
                 currentWordContinued += nextWord; // Just in case of a no match at the end
-                if (!currentDictContinued) {
+                if (!currentDictContinued.size) {
                   break;
                 }
               } else {
@@ -837,10 +853,11 @@ export class FlashText {
           ? nextOrigWord
           : nextOrigWord.toLowerCase();
 
-        const [nextNode, cost] = this._levensthein(
+        const [nextNode, cost] = this.levensthein(
           nextWord,
           currCost,
-          currentDict
+          currentDict,
+          [this._keywordTrieDict, 0, 0]
         ).next().value;
 
         currentDict = nextNode;
