@@ -12,6 +12,8 @@ describe('Get All Keywords', () => {
       js: 'Javascript',
       ts: 'Typescript',
     });
+
+    expect(flashText.length).toBe(2);
   });
 
   it('should return all keywords (case sensitive)', () => {
@@ -25,5 +27,7 @@ describe('Get All Keywords', () => {
       JS: 'Javascript',
       TS: 'Typescript',
     });
+
+    expect(flashText.length).toBe(2);
   });
 });

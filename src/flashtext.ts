@@ -52,14 +52,14 @@ export class FlashText {
   /**
    * @returns Number of terms present in the keyword trie dictionary.
    */
-  public length(): number {
+  public get length(): number {
     return this._termsInTrie;
   }
 
   /**
    * @returns A keyword trie dictionary.
    */
-  public getTrie(): KeywordTrieDictionary {
+  public get trie(): KeywordTrieDictionary {
     return this._keywordTrieDict;
   }
 

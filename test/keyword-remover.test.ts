@@ -93,6 +93,7 @@ describe('Flashtext Remover Test Cases', () => {
       const resultTwo = flashTextTwo.extractKeywords(testCase.sentence);
 
       expect(resultTwo).toEqual(resultOne);
+      expect(flashTextOne.length).toEqual(flashTextTwo.length);
     }
   );
 });

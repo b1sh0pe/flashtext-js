@@ -48,7 +48,7 @@ describe('Fuzzy Extractor Test Cases', () => {
     flashText.addKeyword('colour here', 'couleur ici');
     flashText.addKeyword('and heere', 'et ici');
 
-    const keywordDict: KeywordTrieDictionary = flashText.getTrie();
+    const keywordDict: KeywordTrieDictionary = flashText.trie;
 
     const currentNode = getNodeByPath(keywordDict, ['c', 'o', 'l', 'o']);
 
@@ -80,7 +80,7 @@ describe('Fuzzy Extractor Test Cases', () => {
     const flashText = new FlashText();
     flashText.addKeyword('telegram');
 
-    const keywordDict: KeywordTrieDictionary = flashText.getTrie();
+    const keywordDict: KeywordTrieDictionary = flashText.trie;
     const currentDict = getNodeByPath(keywordDict, ['t', 'e', 'l', 'e', 'g']);
 
     const [closestNode, cost, depth] = flashText
@@ -96,7 +96,7 @@ describe('Fuzzy Extractor Test Cases', () => {
     const flashText = new FlashText();
     flashText.addKeyword('skype', 'messenger');
 
-    const keywordDict: KeywordTrieDictionary = flashText.getTrie();
+    const keywordDict: KeywordTrieDictionary = flashText.trie;
     const currentDict = getNodeByPath(keywordDict, ['s', 'k']);
 
     const [closestNode, cost, depth] = flashText
