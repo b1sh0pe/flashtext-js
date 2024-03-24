@@ -278,10 +278,6 @@ export class FlashText {
    */
   public addKeywordsFromDict(keywordDict: Record<string, string[]>): void {
     for (const [cleanName, keywords] of Object.entries(keywordDict)) {
-      if (!Array.isArray(keywords)) {
-        throw new Error(`Value of key ${cleanName} should be a list`);
-      }
-
       for (const keyword of keywords) {
         this.addKeyword(keyword, cleanName);
       }
@@ -301,11 +297,7 @@ export class FlashText {
    * @param keywordDict - A dictionary of keywords where the key is the clean name and the value is a list of keywords.
    */
   public removeKeywordsFromDict(keywordDict: Record<string, string[]>): void {
-    for (const [cleanName, keywords] of Object.entries(keywordDict)) {
-      if (!Array.isArray(keywords)) {
-        throw new Error(`Value of key ${cleanName} should be a list`);
-      }
-
+    for (const [, keywords] of Object.entries(keywordDict)) {
       for (const keyword of keywords) {
         this.removeKeyword(keyword);
       }
@@ -322,10 +314,6 @@ export class FlashText {
    * @param keywordList - A list of keywords.
    */
   public addKeywordsFromList(keywordList: string[]): void {
-    if (!Array.isArray(keywordList)) {
-      throw new Error('keywordList should be a list');
-    }
-
     for (const keyword of keywordList) {
       this.addKeyword(keyword);
     }
@@ -341,10 +329,6 @@ export class FlashText {
    * @param keywordList - A list of keywords.
    */
   public removeKeywordsFromList(keywordList: string[]): void {
-    if (!Array.isArray(keywordList)) {
-      throw new Error('keywordList should be a list');
-    }
-
     for (const keyword of keywordList) {
       this.removeKeyword(keyword);
     }

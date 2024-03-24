@@ -9,12 +9,12 @@ type ExtractorTestCase = {
   keywords_case_sensitive: string[];
 };
 
+/**
+ * For each of the test case initialize a new FlashText.
+ * Add the keywords the test case to FlashText.
+ * Extract keywords and check if they match the expected result for the test case.
+ */
 describe('Flashword Extractor Test Cases', () => {
-  /**
-   * For each of the test case initialize a new FlashText.
-   * Add the keywords the test case to FlashText.
-   * Extract keywords and check if they match the expected result for the test case.
-   */
   describe('Case Insensitive', () => {
     it.each([
       ...(ExtractorTestCases as unknown as ExtractorTestCase[]).map(
@@ -29,11 +29,6 @@ describe('Flashword Extractor Test Cases', () => {
     });
   });
 
-  /**
-   * For each of the test case initialize a new FlashText.
-   * Add the keywords the test case to FlashText.
-   * Extract keywords and check if they match the expected result for the test case.
-   */
   describe('Case Sensitive', () => {
     it.each([
       ...(ExtractorTestCases as unknown as ExtractorTestCase[]).map(
@@ -45,6 +40,50 @@ describe('Flashword Extractor Test Cases', () => {
       flashText.addKeywordsFromDict(testCase?.keyword_dict);
       const result = flashText.extractKeywords(testCase.sentence);
       expect(result).toEqual(testCase.keywords_case_sensitive);
+    });
+  });
+
+  describe('Span information - Case Insensitive', () => {
+    it.each([
+      ...(ExtractorTestCases as unknown as ExtractorTestCase[]).map(
+        (testCase: ExtractorTestCase) =>
+          [testCase.explanation, testCase] as [string, ExtractorTestCase]
+      ),
+    ])(`%s`, (_, testCase) => {
+      const flashText = new FlashText();
+      for (const key of Object.keys(testCase.keyword_dict)) {
+        flashText.addKeywordsFromList(testCase.keyword_dict[key]);
+      }
+
+      const result = flashText.extractKeywords(testCase.sentence, true);
+
+      for (const keywordData of result) {
+        const [keyword, start, end] = keywordData as [string, number, number];
+        expect(testCase.sentence.toLowerCase().slice(start, end)).toBe(
+          String(keyword).toLowerCase()
+        );
+      }
+    });
+  });
+
+  describe('Span information - Case Sensitive', () => {
+    it.each([
+      ...(ExtractorTestCases as unknown as ExtractorTestCase[]).map(
+        (testCase: ExtractorTestCase) =>
+          [testCase.explanation, testCase] as [string, ExtractorTestCase]
+      ),
+    ])(`%s`, (_, testCase) => {
+      const flashText = new FlashText(true);
+      for (const key of Object.keys(testCase.keyword_dict)) {
+        flashText.addKeywordsFromList(testCase.keyword_dict[key]);
+      }
+
+      const result = flashText.extractKeywords(testCase.sentence, true);
+
+      for (const keywordData of result) {
+        const [keyword, start, end] = keywordData as [string, number, number];
+        expect(testCase.sentence.slice(start, end)).toBe(String(keyword));
+      }
     });
   });
 });
