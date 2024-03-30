@@ -43,6 +43,17 @@ describe('Fuzzy Extractor Test Cases', () => {
     expect(keywordsExtracted).toEqual(expectedResult);
   });
 
+  it('should end up on the right node in the trie when running with default params', () => {
+    const flashText = new FlashText();
+    flashText.addKeyword('Telegam', 'Messenger');
+
+    const [closestNode, cost, depth] = flashText.levensthein('T').next().value;
+
+    expect(closestNode).toEqual(new Map());
+    expect(cost).toEqual(0);
+    expect(depth).toEqual(0);
+  });
+
   it('[additions] should end up on the right node in the trie when starting from the current node', () => {
     const flashText = new FlashText();
     flashText.addKeyword('colour here', 'couleur ici');

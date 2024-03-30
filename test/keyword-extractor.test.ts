@@ -86,4 +86,20 @@ describe('Flashword Extractor Test Cases', () => {
       }
     });
   });
+
+  it('should return empty array if no keywords are found', () => {
+    const flashText = new FlashText();
+
+    const result = flashText.extractKeywords('This is a test sentence');
+
+    expect(result).toEqual([]);
+  });
+
+  it('should return empty array if the sentence is invalid', () => {
+    const flashText = new FlashText(true);
+
+    const result = flashText.extractKeywords('');
+
+    expect(result).toEqual([]);
+  });
 });

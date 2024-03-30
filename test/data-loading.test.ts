@@ -19,4 +19,19 @@ describe('Data Loading', () => {
     const secondSentence = flashText.replaceKeywords(sentence);
     expect(secondSentence).toEqual('I know javascript and product management');
   });
+
+  it('should set non-word boundaries correctly', () => {
+    const flashText = new FlashText();
+
+    // Should not throw an error
+    flashText.setNonWordBoundaries(new Set(['123456789']));
+
+    expect(flashText.nonWordBoundaries).toEqual(new Set(['123456789']));
+
+    flashText.addNonWordBoundary('abcde');
+
+    expect(flashText.nonWordBoundaries).toEqual(
+      new Set(['123456789', 'abcde'])
+    );
+  });
 });

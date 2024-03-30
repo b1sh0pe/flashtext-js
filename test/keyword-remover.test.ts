@@ -97,3 +97,25 @@ describe('Flashtext Remover Test Cases', () => {
     }
   );
 });
+
+describe('Flashtext Remove Keywords', () => {
+  it('should return false if the keyword is invalid', () => {
+    const flashText = new FlashText();
+    const result = flashText.removeKeyword('');
+    expect(result).toBe(false);
+  });
+
+  it('should return false if the keyword is not in the trie', () => {
+    const flashText = new FlashText();
+    const result = flashText.removeKeyword('JS');
+    expect(result).toBe(false);
+  });
+
+  it('should return true if the keyword is removed', () => {
+    const flashText = new FlashText();
+    flashText.addKeyword('JS', 'Javascript');
+
+    const result = flashText.removeKeyword('JS');
+    expect(result).toBe(true);
+  });
+});

@@ -60,7 +60,7 @@ export class FlashText {
    * @returns A keyword trie dictionary.
    */
   public get trie(): KeywordTrieDictionary {
-    return this._keywordTrieDict;
+    return new Map(this._keywordTrieDict);
   }
 
   /**
@@ -127,7 +127,7 @@ export class FlashText {
    * @param cleanName The clean term for the keyword. If not provided, the keyword is used as the clean name.
    * @returns Status of the operation. True if the keyword was added to the trie, else false.
    */
-  private _setItem(keyword: string, cleanName: string | null = null): boolean {
+  private _setItem(keyword: string, cleanName: string | null): boolean {
     let status = false;
 
     if (!keyword) {
@@ -220,6 +220,13 @@ export class FlashText {
     }
 
     return status;
+  }
+
+  /**
+   * Get non-word boundaries.
+   */
+  public get nonWordBoundaries(): Set<string> {
+    return new Set(this._nonWordBoundaries);
   }
 
   /**
@@ -410,10 +417,9 @@ export class FlashText {
   public *levensthein(
     word: string,
     maxCost: number = 2,
-    startNode: KeywordTrieDictionary | null = null,
-    defaultValue: [KeywordTrieDictionary, number, number]
+    startNode: KeywordTrieDictionary = this._keywordTrieDict,
+    defaultValue: [KeywordTrieDictionary, number, number] = [new Map(), 0, 0]
   ): Generator<[KeywordTrieDictionary, number, number]> {
-    startNode = startNode || this._keywordTrieDict;
     const rows = [...Array(word.length + 1).keys()];
 
     for (const [char, node] of startNode) {
@@ -435,7 +441,7 @@ export class FlashText {
     word: string,
     rows: number[],
     maxCost: number,
-    depth: number = 0,
+    depth: number,
     defaultValue: [KeywordTrieDictionary, number, number]
   ): Generator<[KeywordTrieDictionary, number, number]> {
     const nColumns = word.length + 1;
