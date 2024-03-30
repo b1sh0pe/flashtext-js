@@ -52,8 +52,15 @@ export class FlashText {
   /**
    * @returns Number of terms present in the keyword trie dictionary.
    */
-  public length(): number {
+  public get length(): number {
     return this._termsInTrie;
+  }
+
+  /**
+   * @returns A keyword trie dictionary.
+   */
+  public get trie(): KeywordTrieDictionary {
+    return new Map(this._keywordTrieDict);
   }
 
   /**
@@ -120,7 +127,7 @@ export class FlashText {
    * @param cleanName The clean term for the keyword. If not provided, the keyword is used as the clean name.
    * @returns Status of the operation. True if the keyword was added to the trie, else false.
    */
-  private _setItem(keyword: string, cleanName: string | null = null): boolean {
+  private _setItem(keyword: string, cleanName: string | null): boolean {
     let status = false;
 
     if (!keyword) {
@@ -216,6 +223,13 @@ export class FlashText {
   }
 
   /**
+   * Get non-word boundaries.
+   */
+  public get nonWordBoundaries(): Set<string> {
+    return new Set(this._nonWordBoundaries);
+  }
+
+  /**
    * Set own non-word boundaries.
    * @param nonWordBoundaries - A set of characters that are considered as non-word boundaries.
    */
@@ -271,10 +285,6 @@ export class FlashText {
    */
   public addKeywordsFromDict(keywordDict: Record<string, string[]>): void {
     for (const [cleanName, keywords] of Object.entries(keywordDict)) {
-      if (!Array.isArray(keywords)) {
-        throw new Error(`Value of key ${cleanName} should be a list`);
-      }
-
       for (const keyword of keywords) {
         this.addKeyword(keyword, cleanName);
       }
@@ -294,11 +304,7 @@ export class FlashText {
    * @param keywordDict - A dictionary of keywords where the key is the clean name and the value is a list of keywords.
    */
   public removeKeywordsFromDict(keywordDict: Record<string, string[]>): void {
-    for (const [cleanName, keywords] of Object.entries(keywordDict)) {
-      if (!Array.isArray(keywords)) {
-        throw new Error(`Value of key ${cleanName} should be a list`);
-      }
-
+    for (const [, keywords] of Object.entries(keywordDict)) {
       for (const keyword of keywords) {
         this.removeKeyword(keyword);
       }
@@ -315,10 +321,6 @@ export class FlashText {
    * @param keywordList - A list of keywords.
    */
   public addKeywordsFromList(keywordList: string[]): void {
-    if (!Array.isArray(keywordList)) {
-      throw new Error('keywordList should be a list');
-    }
-
     for (const keyword of keywordList) {
       this.addKeyword(keyword);
     }
@@ -334,10 +336,6 @@ export class FlashText {
    * @param keywordList - A list of keywords.
    */
   public removeKeywordsFromList(keywordList: string[]): void {
-    if (!Array.isArray(keywordList)) {
-      throw new Error('keywordList should be a list');
-    }
-
     for (const keyword of keywordList) {
       this.removeKeyword(keyword);
     }
@@ -416,12 +414,12 @@ export class FlashText {
    * @param startNode - Trie node from which the search is performed
    * @returns A tuple containing the final node, the cost (i.e the distance), and the depth in the trie.
    */
-  private *_levensthein(
+  public *levensthein(
     word: string,
     maxCost: number = 2,
-    startNode: KeywordTrieDictionary | null = null
+    startNode: KeywordTrieDictionary = this._keywordTrieDict,
+    defaultValue: [KeywordTrieDictionary, number, number] = [new Map(), 0, 0]
   ): Generator<[KeywordTrieDictionary, number, number]> {
-    startNode = startNode || this._keywordTrieDict;
     const rows = [...Array(word.length + 1).keys()];
 
     for (const [char, node] of startNode) {
@@ -431,7 +429,8 @@ export class FlashText {
         word,
         rows,
         maxCost,
-        1
+        1,
+        defaultValue
       );
     }
   }
@@ -442,7 +441,8 @@ export class FlashText {
     word: string,
     rows: number[],
     maxCost: number,
-    depth: number = 0
+    depth: number,
+    defaultValue: [KeywordTrieDictionary, number, number]
   ): Generator<[KeywordTrieDictionary, number, number]> {
     const nColumns = word.length + 1;
     const newRows: number[] = [rows[0] + 1];
@@ -472,10 +472,13 @@ export class FlashText {
           word,
           newRows,
           maxCost,
-          depth + 1
+          depth + 1,
+          defaultValue
         );
       }
     }
+
+    yield defaultValue;
   }
 
   /**
@@ -544,7 +547,7 @@ export class FlashText {
               const innerChar = sentence[idy];
               if (
                 !this._nonWordBoundaries.has(innerChar) &&
-                currentDictContinued?.get(this._keyword)
+                currentDictContinued?.has(this._keyword)
               ) {
                 // update longest sequence found
                 longestSequenceFound = currentDictContinued.get(
@@ -565,16 +568,17 @@ export class FlashText {
                 );
 
                 // current_dict_continued to empty dict by default, so next iteration goes to a `break`
-                const [nextNode, cost] = this._levensthein(
+                const [nextNode, cost] = this.levensthein(
                   nextWord,
                   currCost,
-                  currentDictContinued
+                  currentDictContinued,
+                  [new Map(), 0, 0]
                 ).next().value;
 
                 currentDictContinued = nextNode as KeywordTrieDictionary;
                 currCost -= cost;
                 idy += nextWord.length - 1;
-                if (!currentDictContinued) {
+                if (!currentDictContinued.size) {
                   break;
                 }
               } else {
@@ -586,7 +590,10 @@ export class FlashText {
 
             // end of sentence reached.
 
-            if (currentDictContinued?.has(this._keyword)) {
+            if (
+              idy >= sentenceLen &&
+              currentDictContinued?.has(this._keyword)
+            ) {
               // update longest sequence found
               longestSequenceFound = currentDictContinued.get(
                 this._keyword
@@ -628,10 +635,11 @@ export class FlashText {
           idx + this._getNextWord(sentence.slice(idx)).length
         );
 
-        const [nextDict, cost] = this._levensthein(
+        const [nextDict, cost] = this.levensthein(
           nextWord,
           currCost,
-          currentDict
+          currentDict,
+          [this._keywordTrieDict, 0, 0]
         ).next().value;
 
         currentDict = nextDict;
@@ -699,7 +707,7 @@ export class FlashText {
     }
 
     const newSentencePieces: string[] = [];
-    let origSentence = sentence;
+    const origSentence = sentence;
 
     if (!this._caseSensitive) {
       sentence = sentence.toLowerCase();
@@ -767,23 +775,37 @@ export class FlashText {
               } else if (currCost > 0) {
                 const nextWord = this._getNextWord(origSentence.slice(idy));
 
-                const [nextNode, cost] = this._levensthein(
+                const [nextNode, cost] = this.levensthein(
                   nextWord,
                   currCost,
-                  currentDictContinued
+                  currentDictContinued,
+                  [new Map(), 0, 0]
                 ).next().value;
 
                 currentDictContinued = nextNode;
                 idy += nextWord.length - 1;
                 currCost -= cost;
                 currentWordContinued += nextWord; // Just in case of a no match at the end
-                if (!currentDictContinued) {
+                if (!currentDictContinued.size) {
                   break;
                 }
               } else {
                 break;
               }
               idy++;
+            }
+
+            if (
+              idy >= sentenceLen &&
+              currentDictContinued?.has(this._keyword)
+            ) {
+              // update longest sequence found
+              currentWhiteSpace = '';
+              longestSequenceFound = currentDictContinued.get(
+                this._keyword
+              ) as string;
+              sequenceEndPos = idy;
+              isLongerSeqFound = true;
             }
 
             if (isLongerSeqFound) {
@@ -821,10 +843,11 @@ export class FlashText {
           ? nextOrigWord
           : nextOrigWord.toLowerCase();
 
-        const [nextNode, cost] = this._levensthein(
+        const [nextNode, cost] = this.levensthein(
           nextWord,
           currCost,
-          currentDict
+          currentDict,
+          [this._keywordTrieDict, 0, 0]
         ).next().value;
 
         currentDict = nextNode;

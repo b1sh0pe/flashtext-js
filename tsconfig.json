@@ -5,7 +5,7 @@
     "baseUrl": ".",
     "esModuleInterop": true,
     "isolatedModules": true,
-    "lib": ["esnext"],
+    "lib": ["esnext", "DOM"],
     "module": "nodenext",
     "outDir": "./dist",
     "moduleResolution": "nodenext",
@@ -16,7 +16,9 @@
     "strict": true,
   },
   "include": [
-      "./src/**/*.ts"
+      "./src/**/*.ts",
+      "./test/**/*.ts",
+      "jest.config.ts"
   ],
   "exclude": [
       "node_modules"
