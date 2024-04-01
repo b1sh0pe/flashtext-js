@@ -1,6 +1,6 @@
 {
   "name": "flashtext-ts",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "",
   "main": "dist/node/index.js",
   "browser": "dist/browser/index.js",
