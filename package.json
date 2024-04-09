@@ -1,7 +1,7 @@
 {
   "name": "flashtext-ts",
-  "version": "1.0.3",
-  "description": "",
+  "version": "1.0.4",
+  "description": "Typescript version of the Flashtext algorithm.",
   "main": "dist/node/index.js",
   "browser": "dist/browser/index.js",
   "typings": "dist/index.d.ts",
@@ -17,8 +17,21 @@
   "files": [
     "dist"
   ],
-  "keywords": [],
+  "keywords": [
+    "flashtext",
+    "keywords:extractor",
+    "keywords:search",
+    "keywords:replace",
+    "search-in-text",
+    "string-search",
+    "search-and-replace"
+  ],
   "author": "Andrii Arkhipov",
+  "homepage": "https://github.com/b1sh0pe/flashtext-ts",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/b1sh0pe/flashtext-ts.git"
+  },
   "license": "MIT",
   "publishConfig": {
     "@b1sh0pe:registry": "https://registry.npmjs.org"
